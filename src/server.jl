@@ -4,7 +4,7 @@ import Sockets
 
 pipename = length(ARGS) > 1 ? ARGS[2] : nothing
 
-conn = pipename!==nothing ? Sockets.connect(pipename) : nothing
+conn = pipename !== nothing ? Sockets.connect(pipename) : nothing
 
 start_time = time_ns()
 
@@ -16,9 +16,9 @@ start_time = time_ns()
 
     # Set BELOW_NORMAL_PRIORITY_CLASS
     ret = ccall(:SetPriorityClass, stdcall, Cint, (Ptr{Cvoid}, Culong), p_handle, 0x00004000)
-    ret!=1 && @warn "Something went wrong when setting BELOW_NORMAL_PRIORITY_CLASS."
+    ret != 1 && @warn "Something went wrong when setting BELOW_NORMAL_PRIORITY_CLASS."
 else
-    ret = ccall(:nice, Cint, (Cint, ), 1)
+    ret = ccall(:nice, Cint, (Cint,), 1)
     # We don't check the return value because it doesn't really matter
 end
 
@@ -31,7 +31,7 @@ using Base: UUID
 include("symbols.jl")
 include("utils.jl")
 
-store_path = length(ARGS)>0 ? ARGS[1] : abspath(joinpath(@__DIR__, "..", "store"))
+store_path = length(ARGS) > 0 ? ARGS[1] : abspath(joinpath(@__DIR__, "..", "store"))
 
 ctx = try
     Pkg.Types.Context()
@@ -58,11 +58,11 @@ for (pk_name, uuid) in toplevel_pkgs
 
     file_name = get_filename_from_name(ctx.env.manifest, uuid)
 
-    # We sometimes have UUIDs in the project file that are not in the 
+    # We sometimes have UUIDs in the project file that are not in the
     # manifest file. That seems like something that shouldn't happen, but
     # in practice is not under our control. For now, we just skip these
     # packages
-    file_name===nothing && continue
+    file_name === nothing && continue
 
     cache_path = joinpath(server.storedir, file_name)
 
@@ -70,7 +70,7 @@ for (pk_name, uuid) in toplevel_pkgs
         if is_package_deved(ctx.env.manifest, uuid)
             cached_version = open(cache_path) do io
                 deserialize(io)
-            end            
+            end
 
             if sha_pkg(frommanifest(ctx.env.manifest, uuid)) != cached_version.sha
                 @info "Now recaching package $pk_name ($uuid)"
@@ -78,16 +78,16 @@ for (pk_name, uuid) in toplevel_pkgs
             else
                 @info "Package $pk_name ($uuid) is cached."
             end
-        else            
+        else
             @info "Package $pk_name ($uuid) is cached."
         end
     else
         @info "Now caching package $pk_name ($uuid)"
         cache_package(server.context, uuid, server.depot, conn)
         # Next write all package info to disc
-        for  (uuid, pkg) in server.depot
+        for (uuid, pkg) in server.depot
             filename = get_filename_from_name(ctx.env.manifest, uuid)
-            filename===nothing && continue
+            filename === nothing && continue
             cache_path = joinpath(server.storedir, filename)
             cache_path in written_caches && continue
             push!(written_caches, cache_path)
@@ -99,7 +99,7 @@ end
 
 end_time = time_ns()
 
-elapsed_time_in_s = (end_time-start_time)/1e9
+elapsed_time_in_s = (end_time - start_time) / 1e9
 @info "Symbol server indexing took $elapsed_time_in_s seconds."
 
 end

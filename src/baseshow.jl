@@ -100,13 +100,13 @@ _summarize(io::IO, @nospecialize(T), binding) = REPL.summarize(io, T, binding)
 # base/show/methodshow.jl
 
 
-function _show_method_table(io::IO, ms::Base.MethodList, max::Int=-1, header::Bool=true)
+function _show_method_table(io::IO, ms::Base.MethodList, max::Int = -1, header::Bool = true)
     mt = ms.mt
     name = mt.name
     hasname = isdefined(mt.module, name) &&
               typeof(getfield(mt.module, name)) <: Function
     if header && isdefined(Base, :show_method_list_header)
-        Base.show_method_list_header(io, ms, str -> "\""*str*"\"")
+        Base.show_method_list_header(io, ms, str->"\"" * str * "\"")
     end
     kwtype = isdefined(mt, :kwsorter) ? typeof(mt.kwsorter) : nothing
     n = rest = 0
@@ -114,11 +114,11 @@ function _show_method_table(io::IO, ms::Base.MethodList, max::Int=-1, header::Bo
 
     resize!(Base.LAST_SHOWN_LINE_INFOS, 0)
     for meth in ms
-        if max==-1 || n<max
+        if max == -1 || n < max
             n += 1
             println(io)
             print(io, "[$n] ")
-            _show(io, meth; kwtype=kwtype)
+            _show(io, meth; kwtype = kwtype)
             file, line = meth.file, meth.line
             try
                 file, line = Base.invokelatest(Base.methodloc_callback[], meth)
@@ -133,7 +133,7 @@ function _show_method_table(io::IO, ms::Base.MethodList, max::Int=-1, header::Bo
     if rest > 0
         println(io)
         if rest == 1
-            show(io, last; kwtype=kwtype)
+            show(io, last; kwtype = kwtype)
         else
             print(io, "... $rest methods not shown")
             if hasname
@@ -147,7 +147,7 @@ _show(io::IO, x) = Base.invokelatest(Base.show, io, x)
 _show(io::IO, ms::Base.MethodList) = _show_method_table(io, ms)
 _show(io::IO, mt::Core.MethodTable) = _show_method_table(io, Base.MethodList(mt))
 
-function _show(io::IO, m::Method; kwtype::Union{DataType, Nothing}=nothing)
+function _show(io::IO, m::Method; kwtype::Union{DataType,Nothing} = nothing)
     tv, decls, file, line = _arg_decl_parts(m)
     sig = Base.unwrap_unionall(m.sig)
     ft0 = sig.parameters[1]
@@ -174,7 +174,7 @@ function _show(io::IO, m::Method; kwtype::Union{DataType, Nothing}=nothing)
         print(io, "(", d1[1], "::", d1[2], ")")
     end
     print(io, "(")
-    join(io, String[isempty(d[2]) ? d[1] : d[1]*"::"*d[2] for d in decls[2:end]],
+    join(io, String[isempty(d[2]) ? d[1] : d[1] * "::" * d[2] for d in decls[2:end]],
                  ", ", ", ")
     if kwtype !== nothing
         kwargs = Base.kwarg_decl(m, kwtype)
@@ -206,7 +206,7 @@ function _arg_decl_parts(m::Method)
     line = m.line
     argnames = Base.method_argnames(m)
     if length(argnames) >= m.nargs
-        show_env = Base.ImmutableDict{Symbol, Any}()
+        show_env = Base.ImmutableDict{Symbol,Any}()
         for t in tv
             show_env = Base.ImmutableDict(show_env, :unionall_env => t)
         end
@@ -221,15 +221,15 @@ end
 function _argtype_decl(env, n, sig::DataType, i::Int, nargs, isva::Bool) # -> (argname, argtype)
     t = sig.parameters[i]
     if i == nargs && isva && !Base.isvarargtype(t)
-        t = Vararg{t,length(sig.parameters)-nargs+1}
+        t = Vararg{t,length(sig.parameters) - nargs + 1}
     end
-    if isa(n,Expr)
+    if isa(n, Expr)
         n = n.args[1]  # handle n::T in arg list
     end
     s = string(n)
     i = findfirst(isequal('#'), s)
     if i !== nothing
-        s = s[1:i-1]
+        s = s[1:i - 1]
     end
     if t === Any && !isempty(s)
         return s, ""
@@ -254,8 +254,8 @@ function _argtype_decl(env, n, sig::DataType, i::Int, nargs, isva::Bool) # -> (a
             end
         end
         t1 = _string_with_env(env, "Vararg{", tt, ",", tn, "}")
-        replace(t1, "\""=>"")
-        return s, startswith(t1, "\"") ? replace(t1, "\""=>"") : t1
+        replace(t1, "\"" => "")
+        return s, startswith(t1, "\"") ? replace(t1, "\"" => "") : t1
     end
     return s, _string_with_env(env, t)
 end
@@ -269,7 +269,7 @@ end
 @static if isdefined(Base, :show_sym)
     show_sym = Base.show_sym
 else
-    function show_sym(io::IO, sym; allow_macroname=false)
+    function show_sym(io::IO, sym; allow_macroname = false)
         if Base.isidentifier(sym) || Base.isoperator(sym)
             print(io, sym)
         elseif allow_macroname && (sym_str = string(sym); startswith(sym_str, '@'))
@@ -290,7 +290,7 @@ function _string_with_env(env, xs...)
         siz += _str_sizehint(x)
     end
     # specialized for performance reasons
-    s = IOBuffer(sizehint=siz)
+    s = IOBuffer(sizehint = siz)
     env_io = IOContext(s, env)
     for x in xs
         _show(env_io, x)
@@ -361,7 +361,7 @@ function _show(io::IO, tv::TypeVar)
     # and the upper bound should be printed if it is not `Any`.
     in_env = (:unionall_env => tv) in io
     function show_bound(io::IO, @nospecialize(b))
-        parens = isa(b,UnionAll) && !Base.print_without_params(b)
+        parens = isa(b, UnionAll) && !Base.print_without_params(b)
         parens && print(io, "(")
         _show(io, b)
         parens && print(io, ")")
@@ -393,7 +393,7 @@ function _show_datatype(io::IO, x::DataType)
         n = length(x.parameters)::Int
 
         # Print homogeneous tuples with more than 3 elements compactly as NTuple{N, T}
-        if istuple && n > 3 && all(i -> (x.parameters[1] === i), x.parameters)
+        if istuple && n > 3 && all(i->(x.parameters[1] === i), x.parameters)
             # print(io, "NTuple{", n, ',', x.parameters[1], "}")
             print(io, "NTuple{", n, ',')
             show(io, x.parameters[1])
@@ -457,13 +457,13 @@ function _show_type_name(io::IO, tn::Core.TypeName)
     globfunc && print(io, ")")
 end
 
-function _show_delim_array(io::IO, itr, op, delim, cl, delim_one, i1=1, n=typemax(Int))
+function _show_delim_array(io::IO, itr, op, delim, cl, delim_one, i1 = 1, n = typemax(Int))
     print(io, op)
     if !Base.show_circular(io, itr)
         recur_io = IOContext(io, :SHOWN_SET => itr)
         y = iterate(itr)
         first = true
-        i0 = i1-1
+        i0 = i1 - 1
         while i1 > 1 && y !== nothing
             y = iterate(itr, y[2])
             i1 -= 1
@@ -474,7 +474,7 @@ function _show_delim_array(io::IO, itr, op, delim, cl, delim_one, i1=1, n=typema
                 x = y[1]
                 y = iterate(itr, y[2])
                 _show(IOContext(recur_io, :typeinfo => itr isa typeinfo <: Tuple ?
-                                             fieldtype(typeinfo, i1+i0) :
+                                             fieldtype(typeinfo, i1 + i0) :
                                              typeinfo),
                      x)
                 i1 += 1

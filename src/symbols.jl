@@ -40,7 +40,7 @@ struct Package
     uuid::Base.UUID
     sha
 end
-Package(name::String, val::ModuleStore, ver, uuid::String, sha) = Package(name, val, ver, Base.UUID(uuid), sha) 
+Package(name::String, val::ModuleStore, ver, uuid::String, sha) = Package(name, val, ver, Base.UUID(uuid), sha)
 
 struct MethodStore <: SymStore
     file::String
@@ -208,11 +208,11 @@ function get_module(m::Module, pkg_deps = Set{String}())
             x = getfield(m, n)
             t, p = collect_params(x)
             if x isa Function
-                if parentmodule(x) == x 
+                if parentmodule(x) == x
                     extends = nothing
                 else
                     pm = String.(split(string(Base.parentmodule(x)), "."))
-                    extends = PackageRef(ntuple(i-> pm[i], length(pm)))
+                    extends = PackageRef(ntuple(i->pm[i], length(pm)))
                 end
                 out.vals[String(n)] = FunctionStore(read_methods(x, m), _getdoc(x), extends)
             elseif t isa DataType
@@ -256,20 +256,20 @@ end
 function cache_package(c::Pkg.Types.Context, uuid, depot::Dict, conn)
     uuid in keys(depot) && return
     isinmanifest(c, uuid isa String ? Base.UUID(uuid) : uuid) || return
-    
+
     pe = frommanifest(c, uuid)
     pe_name = packagename(c, uuid)
     pid = Base.PkgId(uuid isa String ? Base.UUID(uuid) : uuid, pe_name)
 
     if pid in keys(Base.loaded_modules)
-        conn!==nothing && println(conn, "PROCESSPKG;$pe_name;$uuid;noversion")        
+        conn !== nothing && println(conn, "PROCESSPKG;$pe_name;$uuid;noversion")
         LoadingBay.eval(:($(Symbol(pe_name)) = $(Base.loaded_modules[pid])))
         m = getfield(LoadingBay, Symbol(pe_name))
     else
         m = try
-            conn!==nothing && println(conn, "STARTLOAD;$pe_name;$uuid;noversion")
+            conn !== nothing && println(conn, "STARTLOAD;$pe_name;$uuid;noversion")
             LoadingBay.eval(:(import $(Symbol(pe_name))))
-            conn!==nothing && println(conn, "STOPLOAD;$pe_name")
+            conn !== nothing && println(conn, "STOPLOAD;$pe_name")
             m = getfield(LoadingBay, Symbol(pe_name))
         catch e
             depot[uuid] = Package(pe_name, ModuleStore(pe_name), version(pe), uuid, sha_pkg(pe))
