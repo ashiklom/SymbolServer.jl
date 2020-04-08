@@ -207,13 +207,20 @@ function cache_package(c::Pkg.Types.Context, uuid::UUID, depot::Dict, env_path =
         end
     end
 
+    pkgpath = try
+        LoadingBay.eval(:(import $(Symbol(pe_name))))
+        LoadingBay.eval(:(joinpath(dirname(pathof($(Symbol(pe_name)))), "..")))
+    catch err
+        return nothing
+    end
+
     # Dependencies
     for pkg in deps(pe)
         if path(pe) isa String
             env_path = path(pe)
             Pkg.API.activate(env_path)
-        elseif !is_stdlib(c, uuid) && ((Pkg.API.dir(pe_name) isa String) && !isempty(Pkg.API.dir(pe_name)))
-            env_path = Pkg.API.dir(pe_name)
+        elseif !is_stdlib(uuid) && (pkgpath isa String) && !isempty(pkgpath)
+            env_path = pkgpath
             Pkg.API.activate(env_path)
         end
         cache_package(c, packageuuid(pkg), depot, env_path)
